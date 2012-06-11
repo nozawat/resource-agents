@@ -98,7 +98,7 @@ CASE "monitor with not running"
 #  IPaddr2 succeeds if the ip matched based on the netmask of the subnet
 #  or fails if it did not match to any.
 # Recommended to always specify both nic, cidr_netmask, and broadcast when you needed.
-# IPaddr2 in 3.9.3 was using a wrong subnet mask in this case.
+# IPaddr2 in 3.9.3 was using a wrong subnet mask (constant of 32) in this case.
 #
 CASE "params with nic, no cidr_netmask"
 	Include prepare
@@ -131,8 +131,9 @@ CASE "error params with wrong ip"
 # CASE No.9
 # Note: this result is different from IPaddr2 in 3.9.3.
 # IPaddr2 fails when it could not determine the correct subnet mask.
+# When it could not get base ip, it becomes the error.
 # Recommended to always specify both nic, cidr_netmask, and broadcast when you needed.
-# IPaddr2 in 3.9.3 was using a wrong subnet mask in this case.
+# IPaddr2 in 3.9.3 was using a wrong subnet mask (constant of 32) in this case.
 #
 CASE "params with force nic"
 	Include prepare
@@ -157,7 +158,8 @@ CASE "params with force cidr_netmask (base netmask > assigned netmask)"
 
 # CASE No.11
 # Note: this result is different from IPaddr2 in 3.9.3.
-# IPaddr2 fails because findif.sh can not calculate a broadcast from a netmask.
+# IPaddr2 succeeds but the broadcast is not set.
+# This is because findif.sh can not calculate a broadcast from a netmask.
 # Recommended to always specify both nic, cidr_netmask, and broadcast when you needed.
 # IPaddr2 in 3.9.3 succeeded with using a calculated broadcast.
 #
@@ -176,8 +178,9 @@ CASE "force to use the specified nic and cidr_netmask"
 # CASE No.12
 # Note: this result is different from IPaddr2 in 3.9.3.
 # IPaddr2 fails when it could not determine the correct subnet mask.
+# When it could not get base ip, it becomes the error.
 # Recommended to always specify both nic, cidr_netmask, and broadcast when you needed.
-# IPaddr2 in 3.9.3 was using a wrong subnet mask in this case.
+# IPaddr2 in 3.9.3 was using a wrong subnet mask (constant of 32) in this case.
 #
 CASE "error params with wrong ip and nic (not exist base_ip)"
 	Include prepare
@@ -230,7 +233,8 @@ CASE "error params with wrong ip and cidr_netmask (not exist base_ip)"
 
 # CASE No.16
 # Note: this result is different from IPaddr2 in 3.9.3.
-# IPaddr2 fails because findif.sh can not calculate a broadcast from a netmask.
+# IPaddr2 succeeds but the broadcast is not set.
+# This is because findif.sh can not calculate a broadcast from a netmask.
 # Recommended to always specify both nic, cidr_netmask, and broadcast when you needed.
 # IPaddr2 in 3.9.3 succeeded with using a calculated broadcast.
 #
@@ -246,7 +250,8 @@ CASE "force to use the specified nic and cidr_netmask"
 
 # CASE No.17
 # Note: this result is different from IPaddr2 in 3.9.3.
-# IPaddr2 fails because findif.sh can not calculate a broadcast from a netmask.
+# IPaddr2 succeeds but the broadcast is not set.
+# This is because findif.sh can not calculate a broadcast from a netmask.
 # Recommended to always specify both nic, cidr_netmask, and broadcast when you needed.
 # IPaddr2 in 3.9.3 succeeded with using a calculated broadcast.
 #
