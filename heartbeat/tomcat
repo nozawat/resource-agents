@@ -197,6 +197,19 @@ END_TOMCAT_START
 # Stop Tomcat
 stop_tomcat()
 {
+	RA_TIMEOUT=$((OCF_RESKEY_CRM_meta_timeout/1000))
+	STOP_TIMEOUT=$((RA_TIMEOUT-5))
+	if [ -n $MAX_STOP_TIME ]; then
+		if [ $MAX_STOP_TIME -gt $RA_TIMEOUT ]; then
+			ocf_log warn "max_stop_timeout is longer than ra_stop_timeout."
+		fi
+		if [ $MAX_STOP_TIME -eq 0 ]; then
+			STOP_TIMEOUT=$RA_TIMEOUT
+		else
+			STOP_TIMEOUT=$MAX_STOP_TIME
+		fi
+	fi
+
 	cd "$CATALINA_HOME/bin"
 
 	memorize_pid # This lets monitoring continue to work reliably
@@ -204,7 +217,7 @@ stop_tomcat()
 	echo "`date "+%Y/%m/%d %T"`: stop  ###########################" >> "$TOMCAT_CONSOLE"
 
 	if [ "$RESOURCE_TOMCAT_USER" = RUNASIS ]; then
-		"$CATALINA_HOME/bin/catalina.sh" stop $MAX_STOP_TIME -force \
+		"$CATALINA_HOME/bin/catalina.sh" stop $STOP_TIMEOUT -force \
 			>> "$TOMCAT_CONSOLE" 2>&1
 	else
 		cat<<-END_TOMCAT_STOP | su - -s /bin/sh "$RESOURCE_TOMCAT_USER" >> "$TOMCAT_CONSOLE" 2>&1
@@ -213,7 +226,7 @@ stop_tomcat()
 			export CATALINA_HOME=${CATALINA_HOME}
 			export CATALINA_BASE=${CATALINA_BASE}
 			export CATALINA_PID=${CATALINA_PID}
-			$CATALINA_HOME/bin/catalina.sh stop $MAX_STOP_TIME -force
+			$CATALINA_HOME/bin/catalina.sh stop $STOP_TIMEOUT -force
 END_TOMCAT_STOP
 	fi
 
@@ -439,7 +452,7 @@ CATALINA_HOME="${OCF_RESKEY_catalina_home}"
 CATALINA_BASE="${OCF_RESKEY_catalina_base-${OCF_RESKEY_catalina_home}}"
 CATALINA_OUT="${OCF_RESKEY_catalina_out-$CATALINA_HOME/logs/catalina.out}"
 CATALINA_PID="${OCF_RESKEY_catalina_pid-$CATALINA_HOME/logs/catalina.pid}"
-MAX_STOP_TIME=${OCF_RESKEY_max_stop_time-5}
+MAX_STOP_TIME="${OCF_RESKEY_max_stop_time}"
 
 TOMCAT_START_OPTS="${OCF_RESKEY_tomcat_start_opts}"
 CATALINA_OPTS="-Dname=$TOMCAT_NAME ${OCF_RESKEY_catalina_opts}"
