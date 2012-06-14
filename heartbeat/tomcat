@@ -84,10 +84,19 @@ isrunning_tomcat()
 # 
 isalive_tomcat()
 {
+	# As the server stops, the PID file disappears. To avoid race conditions, 
+	# we will have remembered the PID of a running instance on script entry.
+	local pid=$rememberedPID
+	# If there is a PID file, use that
 	if [ -f $CATALINA_PID ]; then
-		PID=`head -n 1 $CATALINA_PID`
+		ocf_log debug "Reading pid from $CATALINA_PID"
+		# race conditions on PID file being removed by stopping tomcat...
+		pid=`head -n 1 $CATALINA_PID`
+	fi
+	if [ -n "$pid" ] && [ "$pid" -gt 0 ]; then
 		# Retry message for restraint
-		kill -s 0 $PID >/dev/null 2>&1
+		ocf_log debug "Sending noop signal to $pid"
+		kill -s 0 $pid >/dev/null 2>&1
 		return $?
 	fi
 	# No PID file
@@ -189,6 +198,8 @@ END_TOMCAT_START
 stop_tomcat()
 {
 	cd "$CATALINA_HOME/bin"
+
+	memorize_pid # This lets monitoring continue to work reliably
 
 	echo "`date "+%Y/%m/%d %T"`: stop  ###########################" >> "$TOMCAT_CONSOLE"
 
@@ -402,6 +413,14 @@ validate_all_tomcat()
 {
 	ocf_log info "validate_all_tomcat[$TOMCAT_NAME]"
 	return $OCF_SUCCESS
+}
+
+# As we stop tomcat, it removes it's own pid file...we still want to know what it was
+memorize_pid()
+{
+	if [ -f $CATALINA_PID ]; then
+		rememberedPID=$(cat $CATALINA_PID)
+	fi
 }
 
 #
