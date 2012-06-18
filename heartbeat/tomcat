@@ -79,7 +79,7 @@ isrunning_tomcat()
 		ocf_log info "Please make sure that wget is available"
 		return $OCF_ERR_CONFIGURED
 	fi
-	$WGET -O /dev/null $RESOURCE_STATUSURL >/dev/null 2>&1
+	$WGET --tries=20 -O /dev/null $RESOURCE_STATUSURL >/dev/null 2>&1
 }
 
 ############################################################################
