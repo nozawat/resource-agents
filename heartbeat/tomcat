@@ -206,7 +206,7 @@ stop_tomcat()
 {
 	RA_TIMEOUT=$((OCF_RESKEY_CRM_meta_timeout/1000))
 	STOP_TIMEOUT=$((RA_TIMEOUT-5))
-	if [ -n $MAX_STOP_TIME ]; then
+	if [ -n "$MAX_STOP_TIME" ]; then
 		if [ $MAX_STOP_TIME -gt $RA_TIMEOUT ]; then
 			ocf_log warn "max_stop_timeout is longer than ra_stop_timeout."
 		fi
