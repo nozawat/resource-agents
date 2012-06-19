@@ -300,7 +300,7 @@ URL for state confirmation.
 <content type="string" default="" />
 </parameter>
 
-<parameter name="max_stop_time" unique="0" required="1">
+<parameter name="max_stop_time" unique="0">
 <longdesc lang="en">
 Number of seconds to wait during a stop before drastic measures
 (force kill) are used on the tomcat process. 
