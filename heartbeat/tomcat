@@ -39,6 +39,7 @@
 #   OCF_RESKEY_catalina_rotate_log - Control catalina.out logrotation flag. Default is NO.
 #   OCF_RESKEY_catalina_rotatetime - catalina.out logrotation time span(seconds). Default is 86400.
 #   OCF_RESKEY_java_endorsed_dirs - JAVA_ENDORSED_DIRS environment variable. Default is none.
+#   OCF_RESKEY_logging_config - LOGGING_CONFIG environment variable. Default is none.
 ###############################################################################
 
 
@@ -180,6 +181,7 @@ start_tomcat()
 			export CATALINA_OPTS="${CATALINA_OPTS}"
 			export CATALINA_TMPDIR="${CATALINA_TMPDIR}"
 			export JAVA_ENDORSED_DIRS="${JAVA_ENDORSED_DIRS}"
+			export LOGGING_CONFIG="${LOGGING_CONFIG}"
 			$CATALINA_HOME/bin/catalina.sh start ${TOMCAT_START_OPTS}
 END_TOMCAT_START
 	fi
@@ -232,6 +234,7 @@ stop_tomcat()
 			export CATALINA_PID=${CATALINA_PID}
 			export CATALINA_TMPDIR="${CATALINA_TMPDIR}"
 			export JAVA_ENDORSED_DIRS="${JAVA_ENDORSED_DIRS}"
+			export LOGGING_CONFIG="${LOGGING_CONFIG}"
 			$CATALINA_HOME/bin/catalina.sh stop $STOP_TIMEOUT -force
 END_TOMCAT_STOP
 	fi
@@ -409,6 +412,14 @@ Java_endorsed_dirs of tomcat
 <content type="string" default="" />
 </parameter>
 
+<parameter name="logging_config" unique="1">
+<longdesc lang="en">
+Logging_config of tomcat
+</longdesc>
+<shortdesc>Logging_config of tomcat, defaults to none</shortdesc>
+<content type="string" default="" />
+</parameter>
+
 </parameters>
 
 <actions>
@@ -462,6 +473,7 @@ CATALINA_TMPDIR="${OCF_RESKEY_catalina_tmpdir}"
 CATALINA_ROTATE_LOG="${OCF_RESKEY_catalina_rotate_log-NO}"
 CATALINA_ROTATETIME="${OCF_RESKEY_catalina_rotatetime-86400}"
 JAVA_ENDORSED_DIRS="${OCF_RESKEY_java_endorsed_dirs}"
+LOGGING_CONFIG="${OCF_RESKEY_logging_config}"
 
 LSB_STATUS_STOPPED=3
 if [ $# -ne 1 ]; then
@@ -483,7 +495,7 @@ if [ ! -d "$JAVA_HOME" -o ! -d "$CATALINA_HOME" -o ! -d "$CATALINA_BASE" ]; then
 	exit $OCF_ERR_INSTALLED
 fi
 
-export JAVA_HOME JAVA_OPTS CATALINA_HOME CATALINA_BASE CATALINA_OUT CATALINA_PID CATALINA_OPTS CATALINA_TMPDIR JAVA_ENDORSED_DIRS
+export JAVA_HOME JAVA_OPTS CATALINA_HOME CATALINA_BASE CATALINA_OUT CATALINA_PID CATALINA_OPTS CATALINA_TMPDIR JAVA_ENDORSED_DIRS LOGGING_CONFIG
 
 JAVA=${JAVA_HOME}/bin/java
 
