@@ -24,8 +24,6 @@
 # OCF parameters:
 #   OCF_RESKEY_tomcat_name - The name of the resource. Default is tomcat
 #   OCF_RESKEY_script_log  - A destination of the log of this script. Default /var/log/OCF_RESKEY_tomcat_name.log
-#   OCF_RESKEY_tomcat_stop_timeout  - Time-out at the time of the stop. Default is 5. DEPRECATED
-#   OCF_RESKEY_tomcat_suspend_trialcount  - The re-try number of times awaiting a stop. Default is 10. DEPRECATED
 #   OCF_RESKEY_tomcat_user  - A user name to start a resource.
 #   OCF_RESKEY_statusurl - URL for state confirmation. Default is http://127.0.0.1:8080
 #   OCF_RESKEY_max_stop_time - The max time it should take for proper shutdown. Restrictions, only Tomcat6.
@@ -276,23 +274,6 @@ Log file, used during start and stop operations.
 </longdesc>
 <shortdesc>Log file</shortdesc>
 <content type="string" default="" />
-</parameter>
-
-<parameter name="tomcat_stop_timeout" unique="0">
-<longdesc lang="en">
-Time-out for stop operation. DEPRECATED
-</longdesc>
-<shortdesc>Time-out for the stop operation. DEPRECATED</shortdesc>
-<content type="integer" default="" />
-</parameter>
-
-<parameter name="tomcat_suspend_trialcount" unique="0">
-<longdesc lang="en">
-Maximum number of times to retry stop operation before suspending
-and killing Tomcat. DEPRECATED. Does not retry.
-</longdesc>
-<shortdesc>Max retry count for stop operation. DEPRECATED</shortdesc>
-<content type="integer" default="" />
 </parameter>
 
 <parameter name="tomcat_user" unique="0">
