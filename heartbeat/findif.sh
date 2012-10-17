@@ -54,7 +54,7 @@ prefixcheck() {
   if [ $prefix_length -gt 3 -o $prefix_length -eq 0 ] ; then
     return 1
   fi
-  echo "$prefix" | grep "[^0-9]"
+  echo "$prefix" | grep -qs "[^0-9]"
   if [ $? = 0 ] ; then
     return 1
   fi
