@@ -154,7 +154,7 @@ findif()
       fi
     fi
   else
-    if [ -z "$OCF_RESKEY_nic" -a "$NETMASK" -ne "${1#*/}" ] ; then
+    if [ -z "$OCF_RESKEY_nic" -a "$NETMASK" != "${1#*/}" ] ; then
       return 1
     fi
   fi
