@@ -89,37 +89,59 @@ findif()
   echo $match | grep -qs ":"
   if [ $? = 0 ] ; then
     ipcheck_ipv6 $match
-    [ $? = 1 ] && return 6
+    if [ $? = 1 ] ; then
+      ocf_log err "IP address [$match] not valid."
+      return 6
+    fi
     if [ -n "$NIC" ] ; then
       ifcheck_ipv6 $NIC
-      [ $? = 1 ] && return 6
+      if [ $? = 1 ] ; then
+        ocf_log err "Unknown interface [$NIC] No such device."
+        return 6
+      fi
     else
       echo $match | grep -qis '^fe80::'
       if [ $? = 0 ] ; then
+        ocf_log err "IP address (Link Local Address) [$match] not available."
         return 1
       fi
     fi
     if [ -n "$NETMASK" ] ; then
       prefixcheck $NETMASK 128
-      [ $? = 1 ] && return 6
+      if [ $? = 1 ] ; then
+        ocf_log err "Invalid netmask specification [$NETMASK]."
+        return 6
+      fi
       match=$match/$NETMASK
     fi
     family="inet6"
   else
     ipcheck_ipv4 $match
-    [ $? = 1 ] && return 6
+    if [ $? = 1 ] ; then
+      ocf_log err "IP address [$match] not valid."
+      return 6
+    fi
     if [ -n "$NIC" ] ; then
       ifcheck_ipv4 $NIC
-      [ $? = 1 ] && return 6
+      if [ $? = 1 ] ; then
+        ocf_log err "Unknown interface [$NIC] No such device."
+        return 6
+      fi
     fi
     if [ -n "$NETMASK" ] ; then
       prefixcheck $NETMASK 32
-      [ $? = 1 ] && return 6
+      if [ $? = 1 ] ; then
+        ocf_log err "Invalid netmask specification [$NETMASK]."
+        return 6
+      fi
       match=$match/$NETMASK
     fi
     if [ -n "$BRDCAST" ] ; then
       ipcheck_ipv4 $BRDCAST
-      [ $? = 1 ] && return 6
+      if [ $? = 1 ] ; then
+        ocf_log err "Invalid broadcast address [$BRDCAST]."
+        return 6
+      fi
     fi
     scope="scope link"
   fi
@@ -137,10 +159,14 @@ findif()
     esac
   fi
   if [ -z "$NIC" -o -z "$NETMASK" ] ; then
-    [ $# = 0 ] && return 1
+    if [ $# = 0 ] ; then
+      ocf_log err "Unable to find nic or netmask."
+      return 1
+    fi
     case $1 in
     */*) : OK ;;
     *)
+      ocf_log err "Unable to find cidr_netmask."
       return 1 ;;
     esac
   fi
@@ -155,6 +181,7 @@ findif()
     fi
   else
     if [ -z "$OCF_RESKEY_nic" -a "$NETMASK" != "${1#*/}" ] ; then
+      ocf_log err "Unable to find nic, or netmask mismatch."
       return 1
     fi
   fi
