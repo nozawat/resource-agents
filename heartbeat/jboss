@@ -22,6 +22,7 @@
 #
 #######################################################################
 # OCF parameters:
+#   OCF_RESKEY_jboss_version - The version of JBoss. Default is JBoss5.
 #   OCF_RESKEY_resource_name - The name of the resource. Default is ${OCF_RESOURCE_INSTANCE}
 # why not let the RA log through lrmd?
 # 2009/09/09 Nakahira:
@@ -266,6 +267,14 @@ Resource script for Jboss. It manages a Jboss instance as an HA resource.
 
 <parameters>
 
+<parameter name="jboss_version" unique="0" required="0">
+<longdesc lang="en">
+The version of the JBoss. Defaults to the version of JBoss5.
+</longdesc>
+<shortdesc>The version of JBoss</shortdesc>
+<content type="string" default="5" />
+</parameter>
+
 <parameter name="resource_name" unique="1" required="0">
 <longdesc lang="en">
 The name of the resource. Defaults to the name of the resource
@@ -365,7 +374,9 @@ With this string heartbeat matches for the right process to kill.
 
 <parameter name="run_command" unique="0" required="0">
 <longdesc lang="en">
-JBoss start command. 
+JBoss start command.
+In the case of JBoss5, a default is $JBOSS_HOME/bin/run.sh.
+In the case of JBoss6, a default is ${JBOSS_HOME}/bin/standalone.sh.
 </longdesc>
 <shortdesc>JBoss start command.</shortdesc>
 <content type="string" default="$JBOSS_HOME/bin/run.sh" />
@@ -441,15 +452,12 @@ validate_all_jboss()
 }
 
 COMMAND=$1
+JBOSS_VERSION="${OCF_RESKEY_jboss_version-5}"
 RESOURCE_NAME="${OCF_RESKEY_resource_name-${OCF_RESOURCE_INSTANCE}}"
 CONSOLE="${OCF_RESKEY_console-/var/log/${RESOURCE_NAME}.log}"
 SHUTDOWN_TIMEOUT="${OCF_RESKEY_shutdown_timeout-5}"
 KILL_TIMEOUT="${OCF_RESKEY_kill_timeout-10}"
 JBOSS_USER="${OCF_RESKEY_user-root}"
-STATUSURL="${OCF_RESKEY_statusurl-http://127.0.0.1:8080}"
-PSTRING="${OCF_RESKEY_pstring-java -Dprogram.name=run.sh}"
-RUN_OPTS="${OCF_RESKEY_run_opts--c default -l lpg4j}"
-SHUTDOWN_OPTS="${OCF_RESKEY_shutdown_opts--s 127.0.0.1:1099}"
 JBOSS_PIDFILE="${OCF_RESKEY_pidfile-/var/run/$RESOURCE_NAME.pid}"
 ROTATELOG_FLG="${OCF_RESKEY_rotate_consolelog-false}"
 ROTATEVALUE="${OCF_RESKEY_rotate_value-86400}"
@@ -468,14 +476,32 @@ if [ "$COMMAND" = "help" -o "$COMMAND" = "usage" ]; then
 	usage
 	exit $OCF_SUCCESS
 fi
+if ! ocf_is_decimal $JBOSS_VERSION; then
+	metadata_jboss
+	exit $OCF_SUCCESS
+fi
 
 # test if these two are set and if directories exist and if the
 # required scripts/binaries exist; use OCF_ERR_INSTALLED
 JAVA_HOME="${OCF_RESKEY_java_home-${JAVA_HOME}}"
 JAVA_OPTS="${OCF_RESKEY_java_opts}"
 JBOSS_HOME="${OCF_RESKEY_jboss_home}"
-JBOSS_BASE_DIR="${OCF_RESKEY_jboss_base_dir}"
+
+if [ "$JBOSS_VERSION" -le 5 ]; then
+STATUSURL="${OCF_RESKEY_statusurl-http://127.0.0.1:8080}"
+PSTRING="${OCF_RESKEY_pstring-java -Dprogram.name=run.sh}"
 RUN_COMMAND="${OCF_RESKEY_run_command-${JBOSS_HOME}/bin/run.sh}"
+RUN_OPTS="${OCF_RESKEY_run_opts--c default -l lpg4j}"
+SHUTDOWN_OPTS="${OCF_RESKEY_shutdown_opts--s 127.0.0.1:1099}"
+
+else
+STATUSURL="${OCF_RESKEY_statusurl-http://127.0.0.1:9990}"
+JBOSS_BASE_DIR="${OCF_RESKEY_jboss_base_dir-${JBOSS_HOME}/standalone}"
+PSTRING="${OCF_RESKEY_pstring-java.*-Djboss.server.base.dir=(${JBOSS_BASE_DIR} .*)|(${JBOSS_BASE_DIR}$)}"
+RUN_COMMAND="${OCF_RESKEY_run_command-${JBOSS_HOME}/bin/standalone.sh}"
+RUN_OPTS="${OCF_RESKEY_run_opts}"
+
+fi
 LAUNCH_JBOSS_IN_BACKGROUND=y
 
 LSB_STATUS_STOPPED=3
