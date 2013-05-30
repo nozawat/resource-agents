@@ -45,7 +45,7 @@
 #   OCF_RESKEY_jboss_base_dir - Base directory of JBoss. Default is None
 #   OCF_RESKEY_pstring - String Jboss will found in procceslist. Default is "java -Dprogram.name=run.sh"
 #   OCF_RESKEY_run_command - JBoss start command. Default is "$JBOSS_HOME/bin/run.sh"
-#   OCF_RESKEY_run_opts - Options for jboss to run. Default is "-c default -l lpg4j"
+#   OCF_RESKEY_run_opts - Options for jboss to run. Default is "-c default"
 #   OCF_RESKEY_shutdown_opts - Options for jboss to shutdonw. Default is "-s 127.0.0.1:1099"
 #   OCF_RESKEY_pidfile - JBoss Process ID file. Default is "/var/run/${OCF_RESKEY_resource_name}.pid"
 #   OCF_RESKEY_rotate_consolelog - Control console log logrotation flag. Default is false.
@@ -528,7 +528,7 @@ if [ "$JBOSS_VERSION" -le 5 ]; then
 STATUSURL="${OCF_RESKEY_statusurl-http://127.0.0.1:8080}"
 PSTRING="${OCF_RESKEY_pstring-java -Dprogram.name=run.sh}"
 RUN_COMMAND="${OCF_RESKEY_run_command-${JBOSS_HOME}/bin/run.sh}"
-RUN_OPTS="${OCF_RESKEY_run_opts--c default -l lpg4j}"
+RUN_OPTS="${OCF_RESKEY_run_opts--c default}"
 SHUTDOWN_OPTS="${OCF_RESKEY_shutdown_opts--s 127.0.0.1:1099}"
 STOP_JBOSS=stop_jboss5
 
