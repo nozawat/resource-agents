@@ -42,6 +42,7 @@
 # greatly depends on the environment. At any rate, system architect
 # should note that pstring doesn't influence other processes.
 #   OCF_RESKEY_pstring - String Jboss will found in procceslist. Default is "java -Dprogram.name=run.sh"
+#   OCF_RESKEY_run_command - JBoss start command. Default is "$JBOSS_HOME/bin/run.sh"
 #   OCF_RESKEY_run_opts - Options for jboss to run. Default is "-c default -l lpg4j"
 #   OCF_RESKEY_shutdown_opts - Options for jboss to shutdonw. Default is "-s 127.0.0.1:1099"
 #   OCF_RESKEY_pidfile - JBoss Process ID file. Default is "/var/run/${OCF_RESKEY_resource_name}.pid"
@@ -142,7 +143,7 @@ start_jboss()
 
 	ocf_log info "Starting JBoss[$RESOURCE_NAME]"
 	if [ "$JBOSS_USER" = root ]; then
-		"$JBOSS_HOME/bin/run.sh" $RUN_OPTS \
+		"$RUN_COMMAND" $RUN_OPTS \
 			>> "$CONSOLE" 2>&1 &
 	else
 		su - -s /bin/bash "$JBOSS_USER" \
@@ -151,7 +152,7 @@ start_jboss()
                             export JBOSS_HOME=${JBOSS_HOME}; \
                             export JBOSS_PIDFILE=\"${JBOSS_PIDFILE}\"; \
                             export LAUNCH_JBOSS_IN_BACKGROUND=${LAUNCH_JBOSS_IN_BACKGROUND}; \
-                            $JBOSS_HOME/bin/run.sh $RUN_OPTS" \
+                            \"$RUN_COMMAND\" $RUN_OPTS" \
 			>> "$CONSOLE" 2>&1 &
 	fi
 
@@ -352,6 +353,14 @@ With this string heartbeat matches for the right process to kill.
 <content type="string" default="java -Dprogram.name=run.sh" />
 </parameter>
 
+<parameter name="run_command" unique="0" required="0">
+<longdesc lang="en">
+JBoss start command. 
+</longdesc>
+<shortdesc>JBoss start command.</shortdesc>
+<content type="string" default="$JBOSS_HOME/bin/run.sh" />
+</parameter>
+
 <parameter name="run_opts" unique="0" required="0">
 <longdesc lang="en">
 Start options to start Jboss with, defaults are from the Jboss-Doku.
@@ -455,6 +464,7 @@ fi
 JAVA_HOME="${OCF_RESKEY_java_home-${JAVA_HOME}}"
 JAVA_OPTS="${OCF_RESKEY_java_opts}"
 JBOSS_HOME="${OCF_RESKEY_jboss_home}"
+RUN_COMMAND="${OCF_RESKEY_run_command-${JBOSS_HOME}/bin/run.sh}"
 LAUNCH_JBOSS_IN_BACKGROUND=y
 
 LSB_STATUS_STOPPED=3
