@@ -171,7 +171,7 @@ start_jboss()
 	return $OCF_SUCCESS
 }
 
-stop_jboss()
+stop_jboss5()
 {
 	ocf_log info "Stopping JBoss[$RESOURCE_NAME]"
 
@@ -229,6 +229,43 @@ stop_jboss()
 
 	if ocf_is_true $ROTATELOG_FLG; then
 		rm -f "${CONSOLE}"
+	fi
+
+	return $OCF_SUCCESS
+}
+
+stop_jboss6()
+{
+	ocf_log info "Stopping JBoss[$RESOURCE_NAME]"
+	if [ -f $JBOSS_PIDFILE ]; then
+		read kpid < $JBOSS_PIDFILE
+		qwait="$KILL_TIMEOUT"
+		count=0
+		# Try issuing SIGTERM
+		kill -s TERM $kpid
+		until [ `ps --pid $kpid 2> /dev/null | grep -c $kpid 2> /dev/null` -eq '0' ] || [ $count -gt $qwait ]
+		do
+			sleep 1
+			count=`expr $count + 1`
+		done
+
+		if [ $count -gt $qwait ]; then
+			kwait="$KILL_TIMEOUT"
+			count=0
+			# Try issuing SIGQUIT
+			kill -s QUIT $kpid
+			until [ `ps --pid $kpid 2> /dev/null | grep -c $kpid 2> /dev/null` -eq '0' ] || [ $count -gt $kwait ]
+			do
+				sleep 1
+				count=`expr $count + 1`
+			done
+			if [ $count -gt $kwait ]; then
+				 kill -s KILL $kpid
+			fi
+		fi
+		rm -f $JBOSS_PIDFILE
+	else
+		ocf_log info "JBoss already stopped."
 	fi
 
 	return $OCF_SUCCESS
@@ -493,6 +530,7 @@ PSTRING="${OCF_RESKEY_pstring-java -Dprogram.name=run.sh}"
 RUN_COMMAND="${OCF_RESKEY_run_command-${JBOSS_HOME}/bin/run.sh}"
 RUN_OPTS="${OCF_RESKEY_run_opts--c default -l lpg4j}"
 SHUTDOWN_OPTS="${OCF_RESKEY_shutdown_opts--s 127.0.0.1:1099}"
+STOP_JBOSS=stop_jboss5
 
 else
 STATUSURL="${OCF_RESKEY_statusurl-http://127.0.0.1:9990}"
@@ -500,6 +538,7 @@ JBOSS_BASE_DIR="${OCF_RESKEY_jboss_base_dir-${JBOSS_HOME}/standalone}"
 PSTRING="${OCF_RESKEY_pstring-java.*-Djboss.server.base.dir=(${JBOSS_BASE_DIR} .*)|(${JBOSS_BASE_DIR}$)}"
 RUN_COMMAND="${OCF_RESKEY_run_command-${JBOSS_HOME}/bin/standalone.sh}"
 RUN_OPTS="${OCF_RESKEY_run_opts}"
+STOP_JBOSS=stop_jboss6
 
 fi
 LAUNCH_JBOSS_IN_BACKGROUND=y
@@ -536,7 +575,7 @@ case "$COMMAND" in
 		exit $func_status
 		;;
 	stop)
-		stop_jboss
+		$STOP_JBOSS
 		func_status=$?
 		exit $func_status
 		;;
