@@ -44,6 +44,7 @@
 #   OCF_RESKEY_pstring - String Jboss will found in procceslist. Default is "java -Dprogram.name=run.sh"
 #   OCF_RESKEY_run_opts - Options for jboss to run. Default is "-c default -l lpg4j"
 #   OCF_RESKEY_shutdown_opts - Options for jboss to shutdonw. Default is "-s 127.0.0.1:1099"
+#   OCF_RESKEY_pidfile - JBoss Process ID file. Default is "/var/run/${OCF_RESKEY_resource_name}.pid"
 #   OCF_RESKEY_rotate_consolelog - Control console log logrotation flag. Default is false.
 #   OCF_RESKEY_rotate_value - console log logrotation value. Default is 86400 span(seconds).
 #   OCF_RESKEY_rotate_logsuffix - Control console log logrotation suffix. Default is .%F.
@@ -148,6 +149,8 @@ start_jboss()
 			-c "export JAVA_HOME=${JAVA_HOME}; \
                             export JAVA_OPTS=\"${JAVA_OPTS}\"; \
                             export JBOSS_HOME=${JBOSS_HOME}; \
+                            export JBOSS_PIDFILE=\"${JBOSS_PIDFILE}\"; \
+                            export LAUNCH_JBOSS_IN_BACKGROUND=${LAUNCH_JBOSS_IN_BACKGROUND}; \
                             $JBOSS_HOME/bin/run.sh $RUN_OPTS" \
 			>> "$CONSOLE" 2>&1 &
 	fi
@@ -365,6 +368,14 @@ Stop options to stop Jboss with.
 <content type="string" default="-s 127.0.0.1:1099" />
 </parameter>
 
+<parameter name="pidfile" unique="1" required="0">
+<longdesc lang="en">
+JBoss Process ID file.
+</longdesc>
+<shortdesc>JBoss Process ID file.</shortdesc>
+<content type="string" default="/var/run/${OCF_RESKEY_resource_name}.pid" />
+</parameter>
+
 <parameter name="rotate_consolelog" unique="0">
 <longdesc lang="en">
 Rotate console log flag.
@@ -420,6 +431,7 @@ STATUSURL="${OCF_RESKEY_statusurl-http://127.0.0.1:8080}"
 PSTRING="${OCF_RESKEY_pstring-java -Dprogram.name=run.sh}"
 RUN_OPTS="${OCF_RESKEY_run_opts--c default -l lpg4j}"
 SHUTDOWN_OPTS="${OCF_RESKEY_shutdown_opts--s 127.0.0.1:1099}"
+JBOSS_PIDFILE="${OCF_RESKEY_pidfile-/var/run/$RESOURCE_NAME.pid}"
 ROTATELOG_FLG="${OCF_RESKEY_rotate_consolelog-false}"
 ROTATEVALUE="${OCF_RESKEY_rotate_value-86400}"
 ROTATELOG_SUFFIX="${OCF_RESKEY_rotate_logsuffix-.%F}"
@@ -443,6 +455,7 @@ fi
 JAVA_HOME="${OCF_RESKEY_java_home-${JAVA_HOME}}"
 JAVA_OPTS="${OCF_RESKEY_java_opts}"
 JBOSS_HOME="${OCF_RESKEY_jboss_home}"
+LAUNCH_JBOSS_IN_BACKGROUND=y
 
 LSB_STATUS_STOPPED=3
 if [ ! -d "$JAVA_HOME" -o ! -d "$JBOSS_HOME" ]; then
@@ -455,7 +468,7 @@ if [ ! -d "$JAVA_HOME" -o ! -d "$JBOSS_HOME" ]; then
 	exit $OCF_ERR_INSTALLED
 fi
 
-export JAVA_HOME JAVA_OPTS JBOSS_HOME
+export JAVA_HOME JAVA_OPTS JBOSS_HOME JBOSS_PIDFILE LAUNCH_JBOSS_IN_BACKGROUND
 
 JAVA=${JAVA_HOME}/bin/java
 
