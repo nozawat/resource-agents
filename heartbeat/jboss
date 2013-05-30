@@ -149,9 +149,9 @@ start_jboss()
 			>> "$CONSOLE" 2>&1 &
 	else
 		su - -s /bin/bash "$JBOSS_USER" \
-			-c "export JAVA_HOME=${JAVA_HOME}; \
+			-c "export JAVA_HOME=\"${JAVA_HOME}\"; \
                             export JAVA_OPTS=\"${JAVA_OPTS}\"; \
-                            export JBOSS_HOME=${JBOSS_HOME}; \
+                            export JBOSS_HOME=\"${JBOSS_HOME}\"; \
                             export JBOSS_BASE_DIR=\"${JBOSS_BASE_DIR}\"; \
                             export JBOSS_PIDFILE=\"${JBOSS_PIDFILE}\"; \
                             export LAUNCH_JBOSS_IN_BACKGROUND=${LAUNCH_JBOSS_IN_BACKGROUND}; \
