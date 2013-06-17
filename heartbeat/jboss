@@ -45,6 +45,7 @@
 #   OCF_RESKEY_run_command - JBoss start command. Default is "${OCF_RESKEY_run_command_default}"
 #   OCF_RESKEY_run_opts - Options for jboss to run. Default is ${OCF_RESKEY_run_opts_default}
 #   OCF_RESKEY_shutdown_opts - Options for jboss to shutdonw. Default is "-s 127.0.0.1:1099"
+#   OCF_RESKEY_pidfile - JBoss Process ID file. Default is "/var/run/${OCF_RESKEY_resource_name}.pid"
 #   OCF_RESKEY_rotate_consolelog - Control console log logrotation flag. Default is false.
 #   OCF_RESKEY_rotate_value - console log logrotation value. Default is 86400 span(seconds).
 #   OCF_RESKEY_rotate_logsuffix - Control console log logrotation suffix. Default is .%F.
@@ -101,6 +102,24 @@ monitor_jboss()
 	isrunning_jboss $1
 }
 
+getpid()
+{
+	# The check that PID file is made definitely
+	if [ -f $JBOSS_PIDFILE ]; then
+		JBOSS_PID=`head -n 1 $JBOSS_PIDFILE`
+	fi
+}
+
+pidcheck_jboss()
+{
+	getpid
+	if [ -n "$JBOSS_PID" ] && [ "$JBOSS_PID" -gt 0 ]; then
+		kill -s 0 $JBOSS_PID >/dev/null 2>&1
+		[ $? -eq 0 ] && return 0
+	fi
+	return 1
+}
+
 rotate_console()
 {
 	# Look for rotatelogs/rotatelogs2
@@ -149,6 +168,8 @@ start_jboss()
 			-c "export JAVA_HOME=\"${JAVA_HOME}\"; \
                             export JAVA_OPTS=\"${JAVA_OPTS}\"; \
                             export JBOSS_HOME=\"${JBOSS_HOME}\"; \
+                            export JBOSS_PIDFILE=\"${JBOSS_PIDFILE}\"; \
+                            export LAUNCH_JBOSS_IN_BACKGROUND=${LAUNCH_JBOSS_IN_BACKGROUND}; \
                             \"$RUN_COMMAND\" $RUN_OPTS" \
 			>> "$CONSOLE" 2>&1 &
 	fi
@@ -156,7 +177,10 @@ start_jboss()
 	while true; do
 		monitor_jboss start
 		if [ $? = $OCF_SUCCESS ]; then
-			break
+			[ "x$LAUNCH_JBOSS_IN_BACKGROUND" = "x" ] && break
+			pidcheck_jboss
+			[ $? -eq 0 ] && break
+			ocf_log err "PID file [$JBOSS_PIDFILE($JBOSS_PID)] and real PID have a difference."
 		fi
 		ocf_log info "start_jboss[$RESOURCE_NAME]: retry monitor_jboss"
 		sleep 3
@@ -384,6 +408,14 @@ Stop options to stop Jboss with.
 <content type="string" default="-s 127.0.0.1:1099" />
 </parameter>
 
+<parameter name="pidfile" unique="1" required="0">
+<longdesc lang="en">
+JBoss Process ID file.
+</longdesc>
+<shortdesc>JBoss Process ID file.</shortdesc>
+<content type="string" default="/var/run/${OCF_RESKEY_resource_name}.pid" />
+</parameter>
+
 <parameter name="rotate_consolelog" unique="0">
 <longdesc lang="en">
 Rotate console log flag.
@@ -441,11 +473,14 @@ if [ "$JBOSS_VERSION" -le 5 ]; then
 	OCF_RESKEY_pstring_default="java -Dprogram.name=run.sh"
 	OCF_RESKEY_run_command_default="${OCF_RESKEY_jboss_home}/bin/run.sh"
 	OCF_RESKEY_run_opts_default="-c default"
+	LAUNCH_JBOSS_IN_BACKGROUND=""
 else
 	OCF_RESKEY_statusurl_default="http://127.0.0.1:9990"
 	OCF_RESKEY_pstring_default=""
 	OCF_RESKEY_run_command_default="${OCF_RESKEY_jboss_home}/bin/standalone.sh"
 	OCF_RESKEY_run_opts_default=""
+	LAUNCH_JBOSS_IN_BACKGROUND=y
+	JBOSS_PID=0
 fi
 RESOURCE_NAME="${OCF_RESKEY_resource_name-${OCF_RESOURCE_INSTANCE}}"
 CONSOLE="${OCF_RESKEY_console-/var/log/${RESOURCE_NAME}.log}"
@@ -456,6 +491,7 @@ STATUSURL="${OCF_RESKEY_statusurl-${OCF_RESKEY_statusurl_default}}"
 PSTRING="${OCF_RESKEY_pstring-${OCF_RESKEY_pstring_default}}"
 RUN_OPTS="${OCF_RESKEY_run_opts-${OCF_RESKEY_run_opts_default}}"
 SHUTDOWN_OPTS="${OCF_RESKEY_shutdown_opts--s 127.0.0.1:1099}"
+JBOSS_PIDFILE="${OCF_RESKEY_pidfile-/var/run/$RESOURCE_NAME.pid}"
 ROTATELOG_FLG="${OCF_RESKEY_rotate_consolelog-false}"
 ROTATEVALUE="${OCF_RESKEY_rotate_value-86400}"
 ROTATELOG_SUFFIX="${OCF_RESKEY_rotate_logsuffix-.%F}"
@@ -492,7 +528,7 @@ if [ ! -d "$JAVA_HOME" -o ! -d "$JBOSS_HOME" ]; then
 	exit $OCF_ERR_INSTALLED
 fi
 
-export JAVA_HOME JAVA_OPTS JBOSS_HOME
+export JAVA_HOME JAVA_OPTS JBOSS_HOME JBOSS_PIDFILE LAUNCH_JBOSS_IN_BACKGROUND
 
 JAVA=${JAVA_HOME}/bin/java
 
