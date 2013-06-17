@@ -189,7 +189,7 @@ start_jboss()
 	return $OCF_SUCCESS
 }
 
-stop_jboss()
+stop_jboss5()
 {
 	ocf_log info "Stopping JBoss[$RESOURCE_NAME]"
 
@@ -244,6 +244,50 @@ stop_jboss()
 		ocf_log info "stop_jboss[$RESOURCE_NAME]: kill jboss by SIGKILL ($lapse_sec/@@@)"
 		pkill -KILL -f "$PSTRING"
 	done
+
+	if ocf_is_true $ROTATELOG_FLG; then
+		rm -f "${CONSOLE}"
+	fi
+
+	return $OCF_SUCCESS
+}
+
+stop_jboss6()
+{
+	local lapse_sec
+
+	ocf_log info "Stopping JBoss[$RESOURCE_NAME]"
+
+	# JBoss6 get PID from PID file.
+	# Then send a signal to PID by the following order and stop.
+	# SIGTERM - SIGQUIT - SIGKILL
+	pidcheck_jboss
+	[ $? -eq 0 ] && kill -s TERM $JBOSS_PID
+
+	lapse_sec=0
+	while pgrep -f "$PSTRING" > /dev/null; do
+		sleep 1
+		lapse_sec=`expr $lapse_sec + 1`
+		ocf_log info "stop_jboss[$RESOURCE_NAME]: stop NORM $lapse_sec/$KILL_TIMEOUT"
+		if [ $lapse_sec -ge $KILL_TIMEOUT ]; then
+			break
+		fi
+	done
+
+	if pgrep -f "$PSTRING" > /dev/null; then 
+		ocf_log info "stop_jboss[$RESOURCE_NAME]: output a JVM thread dump to $CONSOLE"
+		kill -s QUIT $JBOSS_PID
+		lapse_sec=0
+		while pgrep -f "$PSTRING" > /dev/null; do
+			sleep 1
+			lapse_sec=`expr $lapse_sec + 1`
+			ocf_log info "stop_jboss[$RESOURCE_NAME]: kill jboss by SIGKILL ($lapse_sec/@@@)"
+			kill -s -KILL $JBOSS_PID
+		done
+	fi
+
+	# PID file may not delete when send SIGKILL.
+	rm -f $JBOSS_PIDFILE
 
 	if ocf_is_true $ROTATELOG_FLG; then
 		rm -f "${CONSOLE}"
@@ -474,6 +518,7 @@ if [ "$JBOSS_VERSION" -le 5 ]; then
 	OCF_RESKEY_run_command_default="${OCF_RESKEY_jboss_home}/bin/run.sh"
 	OCF_RESKEY_run_opts_default="-c default"
 	LAUNCH_JBOSS_IN_BACKGROUND=""
+	STOP_JBOSS=stop_jboss5
 else
 	OCF_RESKEY_statusurl_default="http://127.0.0.1:9990"
 	OCF_RESKEY_pstring_default=""
@@ -481,6 +526,7 @@ else
 	OCF_RESKEY_run_opts_default=""
 	LAUNCH_JBOSS_IN_BACKGROUND=y
 	JBOSS_PID=0
+	STOP_JBOSS=stop_jboss6
 fi
 RESOURCE_NAME="${OCF_RESKEY_resource_name-${OCF_RESOURCE_INSTANCE}}"
 CONSOLE="${OCF_RESKEY_console-/var/log/${RESOURCE_NAME}.log}"
@@ -549,7 +595,7 @@ case "$COMMAND" in
 		exit $func_status
 		;;
 	stop)
-		stop_jboss
+		$STOP_JBOSS
 		func_status=$?
 		exit $func_status
 		;;
